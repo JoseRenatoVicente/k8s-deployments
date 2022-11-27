@@ -1,0 +1,97 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: website
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    k8s-app: website-ghost
+  name: website-ghost
+  namespace: website
+spec:
+  ports:
+    - port: 2368
+      targetPort: 2368
+  selector:
+    k8s-app: website-ghost
+
+---
+
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: website-ghost-pv-volume
+  labels:
+    type: local
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/tmp/data"
+
+---
+
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: website-ghost-pv-claim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+
+---
+
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  labels:
+    k8s-app: website-ghost
+  name: website-ghost
+  namespace: website
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      k8s-app: website-ghost
+  template:
+    metadata:
+      labels:
+        k8s-app: website-ghost
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: website-ghost
+          image: ghost:alpine
+          env:
+            - name: database__client
+              value: mysql
+            - name: database__connection__host
+              value: website-mysql
+            - name: database__connection__user
+              value: ghost_user
+            - name: database__connection__password
+              value: Mh2URVnwF5caZatb
+            - name: database__connection__database
+              value: ghost
+          resources:
+            requests:
+              cpu: 25m
+              memory: 100Mi
+            limits:
+              cpu: 450m
+              memory: 300Mi
+          imagePullPolicy: Always
+          terminationMessagePolicy: File                        
+      restartPolicy: Always

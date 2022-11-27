@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: website
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: website-mysql
+  namespace: website
+spec:
+  ports:
+    - port: 3306
+  selector:
+    app: website-mysql
+
+---
+
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: website-mysql-pv-volume
+  labels:
+    type: local
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/tmp/data"
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: website-mysql-pv-claim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 3Gi
+---
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: website-mysql-rc
+spec:
+  replicas: 1
+  selector: 
+    app: website-mysql
+  template:
+    metadata:
+      name: website-mysql-rc
+      labels:
+        app: website-mysql
+    spec:
+      volumes:
+      - name: website-mysql-pv-storage
+        persistentVolumeClaim:
+          claimName: website-mysql-pv-claim
+      containers:
+      - name: website-mysql
+        image: mysql:latest
+        env:
+        - name: MYSQL_DATABASE
+          value: ghost
+        - name: MYSQL_USER
+          value: ghost_user
+        - name: MYSQL_PASSWORD
+          value: Mh2URVnwF5caZatb
+        - name: MYSQL_ROOT_PASSWORD
+          value: E73ycu9TQaZufcsB
+        ports:
+        - containerPort: 3306
+        volumeMounts:
+        - mountPath: "/var/lib/mysql"
+          name: website-mysql-pv-storage

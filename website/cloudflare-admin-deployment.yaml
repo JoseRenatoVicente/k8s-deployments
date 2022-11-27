@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: website
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    k8s-app: website-cloudflare-admin
+  name: website-cloudflare-admin-svc
+  namespace: website
+spec:
+  ports:
+    - port: 2368
+      targetPort: 2368
+  selector:
+    k8s-app: website-cloudflare-admin
+
+---
+
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  namespace: website
+  name: website-cloudflare-admin
+  labels:
+    k8s-app: website-cloudflare-admin
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      k8s-app: website-cloudflare-admin
+  template:
+    metadata:
+      labels:
+        k8s-app: website-cloudflare-admin
+    spec:
+      containers:
+        - name: website-cloudflare-admin
+          image: cloudflare/cloudflared:latest
+          args: 
+          - tunnel
+          - --url
+          - http://website-ghost:2368
+          resources:
+            requests:
+              cpu: 25m
+              memory: 100Mi
+            limits:
+              cpu: 450m
+              memory: 300Mi
+          imagePullPolicy: Always
+          terminationMessagePolicy: File                        
+      restartPolicy: Always

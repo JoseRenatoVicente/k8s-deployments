@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: website
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    k8s-app: website-varnish
+  name: website-varnish-svc
+  namespace: website
+spec:
+  ports:
+    - port: 80
+      targetPort: 80
+  selector:
+    k8s-app: website-varnish
+
+---
+
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  namespace: website
+  name: website-varnish
+  labels:
+    k8s-app: website-varnish
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      k8s-app: website-varnish
+  template:
+    metadata:
+      labels:
+        k8s-app: website-varnish
+    spec:
+      containers:
+        - name: website-varnish
+          image: varnish:alpine
+          resources:
+            requests:
+              cpu: 25m
+              memory: 100Mi
+            limits:
+              cpu: 450m
+              memory: 300Mi
+          imagePullPolicy: Always
+          terminationMessagePolicy: File                        
+      restartPolicy: Always
